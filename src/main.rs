@@ -181,8 +181,8 @@ fn hex_to_bin (hexa: char) -> String {
     return return_string;
 }
 
-fn bin_to_hex (tup:(&str, &str, i16)) -> (String, String, String) {
-    let mask_size: usize = tup.2.try_into().unwrap();
+fn bin_to_hex (tup:(&str, i16)) -> (String, String, String) {
+    let mask_size: usize = tup.1.try_into().unwrap();
     let mut hex_counter: usize = 0;
     let mut mask_counter: usize = 0;
     let mut range_start: usize = 0;
@@ -190,12 +190,15 @@ fn bin_to_hex (tup:(&str, &str, i16)) -> (String, String, String) {
     let mut addr_hex_network: String = String::new();
     let mut addr_hex_subnet: String = String::new();
     let mut addr_hex_client: String = String::new();
-    while hex_counter < 32 {
+    while mask_counter < 128 {
+        // skip the dots incoming from the data representation
+        //println!("{}", &tup.0);
+        //println!("{}", &tup.0[range_start..range_start+1]);
         if &tup.0[range_start..range_start+1] == "." {
           range_start = range_start + 1;
           range_end = range_end + 1;
         }
-        if hex_counter < 12 {
+        if mask_counter < 48 {
           if (hex_counter % 4) == 0 && hex_counter != 0 {
             addr_hex_network.push_str(":");
           }
@@ -203,7 +206,7 @@ fn bin_to_hex (tup:(&str, &str, i16)) -> (String, String, String) {
           hex_counter = hex_counter + 1;
           mask_counter = mask_counter + 4;
         }
-        else if hex_counter >= 12 && mask_counter < mask_size {
+        else if mask_counter >= 48 && mask_counter < mask_size {
           if (hex_counter % 4) == 0 {
             addr_hex_subnet.push_str(":");
           }
@@ -212,24 +215,12 @@ fn bin_to_hex (tup:(&str, &str, i16)) -> (String, String, String) {
           mask_counter = mask_counter + 4;
         }
         else {
-          if (hex_counter % 4) == 0 && hex_counter != 32 {
+          if (hex_counter % 4) == 0 && hex_counter != 128 {
             addr_hex_client.push_str(":");
           }
-          if tup.1 == "min" {
-            addr_hex_client.push_str("0");
-            hex_counter = hex_counter + 1;
-            mask_counter = mask_counter + 4;
-          }
-          if tup.1 == "max" {
-            addr_hex_client.push_str("f");
-            hex_counter = hex_counter + 1;
-            mask_counter = mask_counter + 4;
-          }
-          if tup.1 == "addr" {
-            addr_hex_client.push_str(&format!("{:x}", u32::from_str_radix(&tup.0[range_start..range_end], 2).unwrap()));
-            hex_counter = hex_counter + 1;
-            mask_counter = mask_counter + 4;
-          }
+          addr_hex_client.push_str(&format!("{:x}", u32::from_str_radix(&tup.0[range_start..range_end], 2).unwrap()));
+          hex_counter = hex_counter + 1;
+          mask_counter = mask_counter + 4;
         }
         range_start = range_start + 4;
         range_end = range_end + 4;
@@ -335,17 +326,25 @@ fn print_address(ipv6: &str, int_mask: i16) {
     concat_address.push_str(&addr_binary_network);
     concat_address.push_str(&addr_binary_subnet);
     concat_address.push_str(&addr_binary_client);
+    let mut concat_min: String = String::new();
+    concat_min.push_str(&addr_binary_network);
+    concat_min.push_str(&addr_binary_subnet);
+    concat_min.push_str(&netmask_binary_client);
+    let mut concat_max: String = String::new();
+    concat_max.push_str(&addr_binary_network);
+    concat_max.push_str(&addr_binary_subnet);
+    concat_max.push_str(&netmask_binary_client.replace("0","1"));
     let mut concat_netmask: String = String::new();
     concat_netmask.push_str(&netmask_binary_network);
     concat_netmask.push_str(&netmask_binary_subnet);
     concat_netmask.push_str(&netmask_binary_client);
-    let addr_tuple:(&str, &str, i16) = (&concat_address, "addr", int_mask);
+    let addr_tuple:(&str, i16) = (&concat_address, int_mask);
     let addr_hex_tuple = bin_to_hex(addr_tuple);
-    let netmask_tuple:(&str, &str, i16) = (&concat_netmask, "addr", int_mask);
+    let netmask_tuple:(&str, i16) = (&concat_netmask, int_mask);
     let netmask_hex_tuple = bin_to_hex(netmask_tuple);
-    let min_tuple:(&str, &str, i16) = (&concat_address, "min", int_mask);
+    let min_tuple:(&str, i16) = (&concat_min, int_mask);
     let min_hex_tuple = bin_to_hex(min_tuple);
-    let max_tuple:(&str, &str, i16) = (&concat_address, "max", int_mask);
+    let max_tuple:(&str, i16) = (&concat_max, int_mask);
     let max_hex_tuple = bin_to_hex(max_tuple);
     println!("\nType:\t\t{}", addr_type);
     println!("Address:\t{}\t\tNetMask:\t{}", addr, int_mask);
