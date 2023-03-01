@@ -61,12 +61,7 @@ fn is_v6_valid(ipv6: &str) -> bool {
 
 
 fn is_mask_valid(int_mask: i16) -> bool {
-    if int_mask >= 7 && int_mask < 48 {
-        let message = format!("\nWARNING : netmask /{} is smaller than /48, this is unusual if ip of type : Global Unicast Address and Link-Local Address\n\n", int_mask).yellow();
-        println!("{}", message);
-        return true;
-    }
-    else if int_mask >= 48 && int_mask <= 128 {
+    if int_mask >= 7 && int_mask <= 128 {
         return true;
     }
     else {
@@ -76,13 +71,35 @@ fn is_mask_valid(int_mask: i16) -> bool {
     }
 }
 
+fn is_mask_valid_global_unicast(int_mask: i16) -> bool {       
+  if int_mask >= 48 && int_mask <= 128 {
+        return true;
+  }
+  else {
+        let message = format!("\nWARNING : netmask /{} is smaller than /48, this is unusual if ip of type : Global Unicast Address\n\n", int_mask).yellow();
+        println!("{}", message);
+        return false;
+    }
+}
+
 fn is_mask_valid_local_link(int_mask: i16) -> bool {
     if int_mask == 64 {
         return true;
     }
     else {
-        let message = format!("\nWARNING : netmask /{} is not /64, this is not ok with if ip of type : Link-Local Address\n\n", int_mask).red();
+        let message = format!("\nERROR : netmask /{} is not /64, this is not ok with if ip of type : Link-Local Address\n\n", int_mask).red();
         println!("{}", message);
+        exit(1);
+    }
+}
+
+fn is_mask_valid_unique_local_address(int_mask: i16) -> bool {
+    if int_mask == 7 {
+        return true;
+    }
+    else {
+        let message = format!("\nERROR : Invalid netmask /{}, netmask for Unique Local Addresses should be 7.\n\n", int_mask).red();
+        eprintln!("{}", message);
         exit(1);
     }
 }
@@ -92,7 +109,7 @@ fn is_mask_valid_loopback(int_mask: i16) -> bool {
         return true;
     }
     else {
-        let message = format!("\nWARNING : netmask /{} is not /128, this is not ok with if ip of type : Loopback Address\n\n", int_mask).red();
+        let message = format!("\nERROR : netmask /{} is not /128, this is not ok with if ip of type : Loopback Address\n\n", int_mask).red();
         println!("{}", message);
         exit(1);
     }
@@ -266,8 +283,14 @@ fn print_address(ipv6: &str, int_mask: i16) {
     if addr_type == "Link-Local Address" {
         is_mask_valid_local_link(int_mask);
     }
+    if addr_type == "Unique-Local Address" {
+        is_mask_valid_unique_local_address(int_mask);
+    }
     if addr_type == "Loopback Address" {
         is_mask_valid_loopback(int_mask);
+    }
+    if addr_type == "Unicast Global" {
+        is_mask_valid_global_unicast(int_mask);
     }
     let mut mask_counter: i16 = 0;
     let mut addr: String = String::new();
