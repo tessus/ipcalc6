@@ -94,11 +94,11 @@ fn is_mask_valid_local_link(int_mask: i16) -> bool {
 }
 
 fn is_mask_valid_unique_local_address(int_mask: i16) -> bool {
-    if int_mask == 7 {
+    if int_mask >= 7 <= 128  {
         return true;
     }
     else {
-        let message = format!("\nERROR : Invalid netmask /{}, netmask for Unique Local Addresses should be 7.\n\n", int_mask).red();
+        let message = format!("\nERROR : Invalid netmask /{}, netmask for Unique Local Addresses should be between 7 and 128.\n\n", int_mask).red();
         eprintln!("{}", message);
         exit(1);
     }
