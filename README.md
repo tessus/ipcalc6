@@ -33,6 +33,4 @@ HostMax:        0010101000000000.0001010001010000.0100000000000111.0000100011111
 
 ```
 
-test
-
-*** -  this repository is mirrored from gitea ***
+Limitation : although prefixes smaller than /48 are used for CIDR routing, they are not supported by this tool.
