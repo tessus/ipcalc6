@@ -76,7 +76,7 @@ fn is_prefix_valid_global_unicast(prefix_size: i16) -> bool {
         return true;
   }
   else {
-        let message = format!("\nERROR : prefix /{} is smaller than /48, this is used in CIDR routing but not allowed as a prefix for an ip address\n\n", prefix_size).yellow();
+        let message = format!("\nERROR : prefix /{} is smaller than /48, this can be used as a routing prefix, but not allowed as a prefix for an IP address\n\n", prefix_size).yellow();
         println!("{}", message);
         exit(1);
     }
