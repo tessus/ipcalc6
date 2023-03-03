@@ -94,7 +94,7 @@ fn is_mask_valid_local_link(int_mask: i16) -> bool {
 }
 
 fn is_mask_valid_unique_local_address(int_mask: i16) -> bool {
-    if int_mask >= 7 <= 128  {
+    if int_mask >= 7 && int_mask <= 128  {
         return true;
     }
     else {
