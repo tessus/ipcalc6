@@ -23,7 +23,7 @@ use std::collections::VecDeque;
 fn help() {
     println!("\n\tUsage :");
     println!("\t\tipcalc6 [ipv6_address]");
-    println!("\t\tipcalc6 [ipv6_address]/[netmask]");
+    println!("\t\tipcalc6 [ipv6_address]/[prefix]");
     println!("\n\tExample :");
     println!("\t\tipcalc6 fe80::fcba:82ff:fe06:c2f1");
     println!("\t\tipcalc6 fe80::fcba:82ff:fe06:c2f1/64\n");
@@ -60,56 +60,56 @@ fn is_v6_valid(ipv6: &str) -> bool {
 }
 
 
-fn is_mask_valid(int_mask: i16) -> bool {
-    if int_mask >= 7 && int_mask <= 128 {
+fn is_prefix_valid(prefix_size: i16) -> bool {
+    if prefix_size >= 7 && prefix_size <= 128 {
         return true;
     }
     else {
-        let message = format!("\nERROR : Invalid netmask /{}, netmask should be an integer between 7 and 128\n\t(smallest netmask is /7 for adress type : Unique Local Addresses)\n\t(maximum possible netmask is 128)\n\n", int_mask).red();
+        let message = format!("\nERROR : Invalid prefix /{}, prefix should be an integer between 7 and 128\n\t(smallest prefix is /7 for adress type : Unique Local Addresses)\n\t(maximum possible prefix is 128)\n\n", prefix_size).red();
         eprintln!("{}", message);
         exit(1);
     }
 }
 
-fn is_mask_valid_global_unicast(int_mask: i16) -> bool {       
-  if int_mask >= 48 && int_mask <= 128 {
+fn is_prefix_valid_global_unicast(prefix_size: i16) -> bool {       
+  if prefix_size >= 48 && prefix_size <= 128 {
         return true;
   }
   else {
-        let message = format!("\nWARNING : netmask /{} is smaller than /48, this is unusual if ip of type : Global Unicast Address\n\n", int_mask).yellow();
-        println!("{}", message);
-        return false;
-    }
-}
-
-fn is_mask_valid_local_link(int_mask: i16) -> bool {
-    if int_mask == 64 {
-        return true;
-    }
-    else {
-        let message = format!("\nERROR : netmask /{} is not /64, this is not ok with if ip of type : Link-Local Address\n\n", int_mask).red();
+        let message = format!("\nERROR : prefix /{} is smaller than /48, this is used in CIDR routing but not allowed as a prefix for an ip address\n\n", prefix_size).yellow();
         println!("{}", message);
         exit(1);
     }
 }
 
-fn is_mask_valid_unique_local_address(int_mask: i16) -> bool {
-    if int_mask >= 7 && int_mask <= 128  {
+fn is_prefix_valid_local_link(prefix_size: i16) -> bool {
+    if prefix_size == 64 {
         return true;
     }
     else {
-        let message = format!("\nERROR : Invalid netmask /{}, netmask for Unique Local Addresses should be between 7 and 128.\n\n", int_mask).red();
+        let message = format!("\nERROR : prefix /{} is not /64, this is not ok with if ip of type : Link-Local Address\n\n", prefix_size).red();
+        println!("{}", message);
+        exit(1);
+    }
+}
+
+fn is_prefix_valid_unique_local_address(prefix_size: i16) -> bool {
+    if prefix_size >= 48 && prefix_size <= 128  {
+        return true;
+    }
+    else {
+        let message = format!("\nERROR : Invalid prefix /{}, prefix for Unique Local Addresses should be between 48 or higher.\n\n", prefix_size).red();
         eprintln!("{}", message);
         exit(1);
     }
 }
 
-fn is_mask_valid_loopback(int_mask: i16) -> bool {
-    if int_mask == 128 {
+fn is_prefix_valid_loopback(prefix_size: i16) -> bool {
+    if prefix_size == 128 {
         return true;
     }
     else {
-        let message = format!("\nERROR : netmask /{} is not /128, this is not ok with if ip of type : Loopback Address\n\n", int_mask).red();
+        let message = format!("\nERROR : prefix /{} is not /128, this is not ok with if ip of type : Loopback Address\n\n", prefix_size).red();
         println!("{}", message);
         exit(1);
     }
@@ -199,15 +199,15 @@ fn hex_to_bin (hexa: char) -> String {
 }
 
 fn bin_to_hex (tup:(&str, i16)) -> (String, String, String) {
-    let mask_size: usize = tup.1.try_into().unwrap();
+    let prefix_size: usize = tup.1.try_into().unwrap();
     let mut hex_counter: usize = 0;
-    let mut mask_counter: usize = 0;
+    let mut prefix_counter: usize = 0;
     let mut range_start: usize = 0;
     let mut range_end: usize = 4;
     let mut addr_hex_network: String = String::new();
     let mut addr_hex_subnet: String = String::new();
     let mut addr_hex_client: String = String::new();
-    while mask_counter < 128 {
+    while prefix_counter < 128 {
         // skip the dots incoming from the data representation
         //println!("{}", &tup.0);
         //println!("{}", &tup.0[range_start..range_start+1]);
@@ -215,21 +215,21 @@ fn bin_to_hex (tup:(&str, i16)) -> (String, String, String) {
           range_start = range_start + 1;
           range_end = range_end + 1;
         }
-        if mask_counter < 48 {
+        if prefix_counter < 48 {
           if (hex_counter % 4) == 0 && hex_counter != 0 {
             addr_hex_network.push_str(":");
           }
           addr_hex_network.push_str(&format!("{:x}", u32::from_str_radix(&tup.0[range_start..range_end], 2).unwrap()));
           hex_counter = hex_counter + 1;
-          mask_counter = mask_counter + 4;
+          prefix_counter = prefix_counter + 4;
         }
-        else if mask_counter >= 48 && mask_counter < mask_size {
+        else if prefix_counter >= 48 && prefix_counter < prefix_size {
           if (hex_counter % 4) == 0 {
             addr_hex_subnet.push_str(":");
           }
           addr_hex_subnet.push_str(&format!("{:x}", u32::from_str_radix(&tup.0[range_start..range_end], 2).unwrap()));
           hex_counter = hex_counter + 1;
-          mask_counter = mask_counter + 4;
+          prefix_counter = prefix_counter + 4;
         }
         else {
           if (hex_counter % 4) == 0 && hex_counter != 128 {
@@ -237,7 +237,7 @@ fn bin_to_hex (tup:(&str, i16)) -> (String, String, String) {
           }
           addr_hex_client.push_str(&format!("{:x}", u32::from_str_radix(&tup.0[range_start..range_end], 2).unwrap()));
           hex_counter = hex_counter + 1;
-          mask_counter = mask_counter + 4;
+          prefix_counter = prefix_counter + 4;
         }
         range_start = range_start + 4;
         range_end = range_end + 4;
@@ -278,28 +278,28 @@ fn detect_type (ipv6: &str) -> String {
 }
 
 
-fn print_address(ipv6: &str, int_mask: i16) {
+fn print_address(ipv6: &str, prefix_size: i16) {
     let addr_type: String = detect_type(ipv6);
     if addr_type == "Link-Local Address" {
-        is_mask_valid_local_link(int_mask);
+        is_prefix_valid_local_link(prefix_size);
     }
     if addr_type == "Unique-Local Address" {
-        is_mask_valid_unique_local_address(int_mask);
+        is_prefix_valid_unique_local_address(prefix_size);
     }
     if addr_type == "Loopback Address" {
-        is_mask_valid_loopback(int_mask);
+        is_prefix_valid_loopback(prefix_size);
     }
     if addr_type == "Unicast Global" {
-        is_mask_valid_global_unicast(int_mask);
+        is_prefix_valid_global_unicast(prefix_size);
     }
-    let mut mask_counter: i16 = 0;
+    let mut prefix_counter: i16 = 0;
     let mut addr: String = String::new();
     let mut addr_binary_network: String = String::new();
-    let mut netmask_binary_network: String = String::new();
+    let mut prefix_binary_network: String = String::new();
     let mut addr_binary_subnet: String = String::new();
-    let mut netmask_binary_subnet: String = String::new();
+    let mut prefix_binary_subnet: String = String::new();
     let mut addr_binary_client: String = String::new();
-    let mut netmask_binary_client: String = String::new();
+    let mut prefix_binary_client: String = String::new();
     let mut expanded_address: VecDeque<String> = expand_address(ipv6);
     let dot: char = '.';
     while expanded_address.len() > 0 {
@@ -308,31 +308,31 @@ fn print_address(ipv6: &str, int_mask: i16) {
             addr.push(addr_char);
             let bin: String = hex_to_bin(addr_char);
             for bit in bin.chars() {
-                if mask_counter < 48  {
+                if prefix_counter < 48  {
                     addr_binary_network.push(bit);
-                    netmask_binary_network.push('1');
-                    mask_counter = mask_counter + 1;
-                    if (mask_counter % 16) == 0 {
+                    prefix_binary_network.push('1');
+                    prefix_counter = prefix_counter + 1;
+                    if (prefix_counter % 16) == 0 {
                         addr_binary_network.push(dot);
-                        netmask_binary_network.push(dot);
+                        prefix_binary_network.push(dot);
                     }
                 }
-                else if mask_counter >= 48 && mask_counter < int_mask {
+                else if prefix_counter >= 48 && prefix_counter < prefix_size {
                     addr_binary_subnet.push(bit);
-                    netmask_binary_subnet.push('1');
-                    mask_counter = mask_counter + 1;
-                    if (mask_counter % 16) == 0 {
+                    prefix_binary_subnet.push('1');
+                    prefix_counter = prefix_counter + 1;
+                    if (prefix_counter % 16) == 0 {
                         addr_binary_subnet.push(dot);
-                        netmask_binary_subnet.push(dot);
+                        prefix_binary_subnet.push(dot);
                     }
                 }
                 else {
                     addr_binary_client.push(bit);
-                    netmask_binary_client.push('0');
-                    mask_counter = mask_counter + 1;
-                    if (mask_counter % 16) == 0 {
+                    prefix_binary_client.push('0');
+                    prefix_counter = prefix_counter + 1;
+                    if (prefix_counter % 16) == 0 {
                         addr_binary_client.push(dot);
-                        netmask_binary_client.push(dot);
+                        prefix_binary_client.push(dot);
                     }
                 }
             }
@@ -341,9 +341,9 @@ fn print_address(ipv6: &str, int_mask: i16) {
     }
     addr.pop();
     addr_binary_client.pop();
-    netmask_binary_client.pop();
+    prefix_binary_client.pop();
     let binary_poss: i128 = 2;
-    let client_poss: i128 = netmask_binary_client.chars().count().try_into().unwrap();
+    let client_poss: i128 = prefix_binary_client.chars().count().try_into().unwrap();
     let num_of_host: i128 = binary_poss.pow(client_poss.try_into().unwrap());
     let mut concat_address: String = String::new();
     concat_address.push_str(&addr_binary_network);
@@ -352,34 +352,34 @@ fn print_address(ipv6: &str, int_mask: i16) {
     let mut concat_min: String = String::new();
     concat_min.push_str(&addr_binary_network);
     concat_min.push_str(&addr_binary_subnet);
-    concat_min.push_str(&netmask_binary_client);
+    concat_min.push_str(&prefix_binary_client);
     let mut concat_max: String = String::new();
     concat_max.push_str(&addr_binary_network);
     concat_max.push_str(&addr_binary_subnet);
-    concat_max.push_str(&netmask_binary_client.replace("0","1"));
-    let mut concat_netmask: String = String::new();
-    concat_netmask.push_str(&netmask_binary_network);
-    concat_netmask.push_str(&netmask_binary_subnet);
-    concat_netmask.push_str(&netmask_binary_client);
-    let addr_tuple:(&str, i16) = (&concat_address, int_mask);
+    concat_max.push_str(&prefix_binary_client.replace("0","1"));
+    let mut concat_prefix: String = String::new();
+    concat_prefix.push_str(&prefix_binary_network);
+    concat_prefix.push_str(&prefix_binary_subnet);
+    concat_prefix.push_str(&prefix_binary_client);
+    let addr_tuple:(&str, i16) = (&concat_address, prefix_size);
     let addr_hex_tuple = bin_to_hex(addr_tuple);
-    let netmask_tuple:(&str, i16) = (&concat_netmask, int_mask);
-    let netmask_hex_tuple = bin_to_hex(netmask_tuple);
-    let min_tuple:(&str, i16) = (&concat_min, int_mask);
+    let prefix_tuple:(&str, i16) = (&concat_prefix, prefix_size);
+    let prefix_hex_tuple = bin_to_hex(prefix_tuple);
+    let min_tuple:(&str, i16) = (&concat_min, prefix_size);
     let min_hex_tuple = bin_to_hex(min_tuple);
-    let max_tuple:(&str, i16) = (&concat_max, int_mask);
+    let max_tuple:(&str, i16) = (&concat_max, prefix_size);
     let max_hex_tuple = bin_to_hex(max_tuple);
     println!("\nType:\t\t{}", addr_type);
-    println!("Address:\t{}\t\tNetMask:\t{}", addr, int_mask);
+    println!("Address:\t{}\t\tNetMask:\t{}", addr, prefix_size);
     println!("Hosts/Net:\t{}\n", num_of_host);
     println!("Address:\t{}{}{}", addr_hex_tuple.0.red(), addr_hex_tuple.1.yellow(), addr_hex_tuple.2.green());
-    println!("Netmask:\t{}{}{}", netmask_hex_tuple.0.yellow(), netmask_hex_tuple.1.yellow(), netmask_hex_tuple.2.green());
+    println!("Prefix:\t\t{}{}{}", prefix_hex_tuple.0.yellow(), prefix_hex_tuple.1.yellow(), prefix_hex_tuple.2.green());
     println!("HostMin:\t{}{}{}", min_hex_tuple.0.red(), min_hex_tuple.1.yellow(), min_hex_tuple.2.green());
     println!("HostMax:\t{}{}{}\n", max_hex_tuple.0.red(), max_hex_tuple.1.yellow(), max_hex_tuple.2.green());
     println!("Address:\t{}{}{}", addr_binary_network.to_string().red(), addr_binary_subnet.to_string().yellow(), addr_binary_client.to_string().green());
-    println!("NetMask:\t{}{}{}", netmask_binary_network.yellow(), netmask_binary_subnet.yellow(), netmask_binary_client.green());
-    println!("HostMin:\t{}{}{}", addr_binary_network.to_string().red(), addr_binary_subnet.to_string().yellow(), netmask_binary_client.green());
-    println!("HostMax:\t{}{}{}\n", addr_binary_network.to_string().red(), addr_binary_subnet.to_string().yellow(), netmask_binary_client.replace("0","1").green());
+    println!("NetMask:\t{}{}{}", prefix_binary_network.yellow(), prefix_binary_subnet.yellow(), prefix_binary_client.green());
+    println!("HostMin:\t{}{}{}", addr_binary_network.to_string().red(), addr_binary_subnet.to_string().yellow(), prefix_binary_client.green());
+    println!("HostMax:\t{}{}{}\n", addr_binary_network.to_string().red(), addr_binary_subnet.to_string().yellow(), prefix_binary_client.replace("0","1").green());
 }
 
 fn main() {
@@ -393,22 +393,22 @@ fn main() {
         help();
         exit(0);
     }
-    // this condition if the user input is ip/netmask (e.g fe80::fcba:82ff:fe06:c2f1/64)
+    // this condition if the user input is ip/prefix (e.g fe80::fcba:82ff:fe06:c2f1/64)
     if args[1].contains("/") {
         //we have to split the string on the "/" and collect the parts in a vector
         let user_input: Vec<&str> = args[1].split("/").collect();
         let ipv6: &str = user_input[0];
-        let mask: Result<i16, ParseIntError> = user_input[1].parse::<i16>();
-        if mask.is_err() {
-            let message = format!("ERROR : Invalid netmask, netmask should be an integer between 7 and 128").red();
+        let prefix: Result<i16, ParseIntError> = user_input[1].parse::<i16>();
+        if prefix.is_err() {
+            let message = format!("ERROR : Invalid prefix, prefix should be an integer between 7 and 128").red();
             eprintln!("{}", message);
             exit(1);
         }
         else {
             if is_v6_valid(ipv6) == true {
-                let int_mask: i16 = mask.ok().unwrap();
-                if is_mask_valid(int_mask) {
-                    print_address(ipv6, int_mask);
+                let prefix_size: i16 = prefix.ok().unwrap();
+                if is_prefix_valid(prefix_size) {
+                    print_address(ipv6, prefix_size);
                 }
                 else {
                     let message = format!("ERROR : Unexpected error").red();
@@ -424,12 +424,12 @@ fn main() {
             }
         }
     }
-    // user added an ip only (e.g fe80::fcba:82ff:fe06:c2f1) we will set the mask to 64
+    // user added an ip only (e.g fe80::fcba:82ff:fe06:c2f1) we will set the prefix to 64
     else {
         let ipv6: &str = &args[1];
         if is_v6_valid(ipv6) == true {
-            let int_mask: i16 = 64;
-            print_address(ipv6, int_mask);
+            let prefix_size: i16 = 64;
+            print_address(ipv6, prefix_size);
         }
         else {
             let message = format!("ERROR : Unexpected error").red();
