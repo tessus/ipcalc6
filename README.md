@@ -7,7 +7,7 @@ error : ipcalc6 requires 1 argument and you provided 0 arguments
 
         Usage :
                 ipcalc6 [ipv6_address]
-                ipcalc6 [ipv6_address]/[netmask]
+                ipcalc6 [ipv6_address]/[prefix]
 
         Example :
                 ipcalc6 fe80::fcba:82ff:fe06:c2f1
