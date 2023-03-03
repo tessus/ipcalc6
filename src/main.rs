@@ -370,14 +370,14 @@ fn print_address(ipv6: &str, prefix_size: i16) {
     let max_tuple:(&str, i16) = (&concat_max, prefix_size);
     let max_hex_tuple = bin_to_hex(max_tuple);
     println!("\nType:\t\t{}", addr_type);
-    println!("Address:\t{}\t\tNetMask:\t{}", addr, prefix_size);
+    println!("Address:\t{}\t\tPrefix:\t{}", addr, prefix_size);
     println!("Hosts/Net:\t{}\n", num_of_host);
     println!("Address:\t{}{}{}", addr_hex_tuple.0.red(), addr_hex_tuple.1.yellow(), addr_hex_tuple.2.green());
     println!("Prefix:\t\t{}{}{}", prefix_hex_tuple.0.yellow(), prefix_hex_tuple.1.yellow(), prefix_hex_tuple.2.green());
     println!("HostMin:\t{}{}{}", min_hex_tuple.0.red(), min_hex_tuple.1.yellow(), min_hex_tuple.2.green());
     println!("HostMax:\t{}{}{}\n", max_hex_tuple.0.red(), max_hex_tuple.1.yellow(), max_hex_tuple.2.green());
     println!("Address:\t{}{}{}", addr_binary_network.to_string().red(), addr_binary_subnet.to_string().yellow(), addr_binary_client.to_string().green());
-    println!("NetMask:\t{}{}{}", prefix_binary_network.yellow(), prefix_binary_subnet.yellow(), prefix_binary_client.green());
+    println!("Prefix:\t\t{}{}{}", prefix_binary_network.yellow(), prefix_binary_subnet.yellow(), prefix_binary_client.green());
     println!("HostMin:\t{}{}{}", addr_binary_network.to_string().red(), addr_binary_subnet.to_string().yellow(), prefix_binary_client.green());
     println!("HostMax:\t{}{}{}\n", addr_binary_network.to_string().red(), addr_binary_subnet.to_string().yellow(), prefix_binary_client.replace("0","1").green());
 }
